@@ -1,43 +1,74 @@
 #include <stdio.h>
-#include "C:\Wichtig\System\Static\Library\Int_Parser.h"
-#include "C:\Wichtig\System\Static\Library\Files.h"
-#include "C:\Wichtig\System\Static\Library\Math.h"
+#include "/home/codeleaded/System/Static/Container/Vector.h"
+#include "/home/codeleaded/System/Static/Library/Files.h"
+#include "/home/codeleaded/System/Static/Library/CStr.h"
 
-#define Number  unsigned long long
+#define DIRECTION_L     0
+#define DIRECTION_R     1
 
-void* Create(char* cstr){
-    Number a = Number_Parse(cstr);
-    void* Data = malloc(sizeof(Number));
-    memcpy(Data,&a,sizeof(Number));
-    return Data;
+typedef struct Rotation {
+    int dir : 1;
+    int value : 31;
+} Rotation;
+
+
+// Vector<CStr> Parts
+Vector Numbers_Build(Vector* Parts){
+    Vector ret = Vector_New(sizeof(Rotation));
+    for(int i = 0;i<Parts->size;i++){
+        CStr cstr = *(CStr*)Vector_Get(Parts,i);
+        CStr real = CStr_ChopEndTo(cstr,'\r');
+
+        const char dir = cstr[0];
+        const int value = (int)Number_Parse(real + 1);
+
+        printf("S: %s -> %d,%d\n",real,dir,value);
+
+        Vector_Push(&ret,(Rotation[]){{
+           .dir = dir=='L' ? DIRECTION_L : DIRECTION_R,
+           .value = value
+        }});
+
+        CStr_Free(&real);
+    }
+    return ret;
 }
-int Cmp(void* e1,void* e2){
-    Number a = *(Number*)e1;
-    Number b = *(Number*)e2;
-    return a<b?1:(a>b?-1:0);
-}
+
 
 int main(){
     
-    char* Data = Files_Read("C:/Wichtig/Hecke/C/Cmd_AOC_2024/01_12_2024/Part2/Data");
-    Vector Parts = Parser_StreamtoParts(Data);
-    Vector Numbers = Parser_buildTo(&Parts,sizeof(Number),Create,free);
+    char* Data = Files_Read("/home/codeleaded/Hecke/C/Cmd_AOC_2025/01_12_2024/Part2/data/Data");
+    printf("Data:\n%s\n",Data);
 
-    Number TotalSim = 0;
-    for(int i = 0;i<Numbers.size/2;i++){
-        Number n = *(Number*)Vector_Get(&Numbers,i*2);
-        Number c = Vector_Count(&Numbers,1,Numbers.size,2,&n,Cmp);
-        Number Sim = n * c;
-        TotalSim += Sim;
+    Vector Parts = CStr_ChopDown(Data,'\n');
+    Vector Numbers = Numbers_Build(&Parts);
 
-        printf("%d -> N1: %llu, Found: %llu,Sim: %llu, TotalSim: %llu |\n",i,n,c,Sim,TotalSim);
+    int overs = 0;
+    int zeros = 0;
+    int angle = 50;
+    for(int i = 0;i<Numbers.size;i++){
+        Rotation* r = (Rotation*)Vector_Get(&Numbers,i);
+        const int rotation = r->value * (r->dir==DIRECTION_L ? -1 : 1);
+        const int preangle = angle;
+        angle += rotation;
+        overs += angle < 0 || angle >= 100 ? 1 : 0;
+        overs += I64_Log(I64_Abs(rotation),100);
+        angle = angle % 100;
+
+        if(angle == 0) zeros++;
+
+        //printf("Angle: %d -(%d)-> %d\n",preangle,rotation,angle);
     }
 
-    printf("TotalSim: %llu |\n",TotalSim);
+    printf("Zeros: %d, Overs: %d -> %d\n",zeros,overs,zeros + overs);
 
     Vector_Free(&Numbers);
-    Parser_freeParts(&Parts);
-    //Vector_Free(&Parts);
+
+    for(int i = 0;i<Parts.size;i++){
+        CStr* cstr = (CStr*)Vector_Get(&Parts,i);
+        CStr_Free(cstr);
+    }
+    Vector_Free(&Parts);
     free(Data);
     
     return 0;
