@@ -51,13 +51,14 @@ int main(){
         const int rotation = r->value * (r->dir==DIRECTION_L ? -1 : 1);
         const int preangle = angle;
         angle += rotation;
-        overs += angle < 0 || angle >= 100 ? 1 : 0;
-        overs += I64_Log(I64_Abs(rotation),100);
+
+        const int overrot = I64_Abs(rotation) / 100;
+        overs += overrot > 0 ? overrot : (angle < 0 || angle >= 100 ? 1 : 0);
         angle = angle % 100;
 
         if(angle == 0) zeros++;
 
-        //printf("Angle: %d -(%d)-> %d\n",preangle,rotation,angle);
+        printf("Angle: %d -(%d)-> %d |    \t%d,%d\n",preangle,rotation,angle,zeros,overs);
     }
 
     printf("Zeros: %d, Overs: %d -> %d\n",zeros,overs,zeros + overs);
