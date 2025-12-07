@@ -7,8 +7,8 @@
 #define DIRECTION_R     1
 
 typedef struct Rotation {
-    int dir : 1;
-    int value : 31;
+    int dir;
+    int value;
 } Rotation;
 
 // Vector<CStr> Parts
@@ -21,7 +21,7 @@ Vector Numbers_Build(Vector* Parts){
         const char dir = cstr[0];
         const int value = (int)Number_Parse(real + 1);
 
-        printf("S: %s -> %d,%d\n",real,dir,value);
+        printf("S: %s -> (%c)%d\n",real,dir,value);
 
         Vector_Push(&ret,(Rotation[]){{
            .dir = dir=='L' ? DIRECTION_L : DIRECTION_R,
@@ -33,12 +33,20 @@ Vector Numbers_Build(Vector* Parts){
     return ret;
 }
 
-int clicking(int angle,int* clicks){
-    if(angle < 0){
-        // -869 -> 800
-        const int down = (I64_Abs(angle) / 100) * 100;
-        angle = down + 100 + (angle % 100);
+int clicking_L(int angle,int rotation,int* clicks){
+    angle -= rotation;
+    
+    while(angle < 0){
+        angle += 100;
+        (*clicks)++;
     }
+    if(angle == 0){
+        (*clicks)++;
+    }
+    return angle;
+}
+int clicking_R(int angle,int rotation,int* clicks){
+    angle += rotation;
 
     while(angle > 100){
         angle -= 100;
@@ -47,7 +55,6 @@ int clicking(int angle,int* clicks){
     if(angle == 0){
         (*clicks)++;
     }
-
     return angle;
 }
 
@@ -64,11 +71,13 @@ int main(){
     
     for(int i = 0;i<Numbers.size;i++){
         Rotation* r = (Rotation*)Vector_Get(&Numbers,i);
-        const int rotation = r->value * (r->dir==DIRECTION_L ? -1 : 1);
         const int preangle = angle;
-        angle += rotation;
-        angle = clicking(angle,&clicks);
-        printf("Angle: %d + %d = %d (%d)\n",preangle,rotation,angle,clicks);
+        
+        if(r->dir == DIRECTION_L)       angle = clicking_L(angle,r->value,&clicks);
+        else if(r->dir == DIRECTION_R)  angle = clicking_R(angle,r->value,&clicks);
+        else                            printf("Unknown direction: %d\n",r->dir);
+        
+        printf("Angle: %d + (%c)%d = %d (%d)\n",preangle,r->dir == DIRECTION_L ? 'L' : 'R',r->value,angle,clicks);
     }
 
     printf("Clicks: %d\n",clicks);
