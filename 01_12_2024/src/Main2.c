@@ -52,11 +52,16 @@ int main(){
         const int preangle = angle;
         angle += rotation;
 
-        const int overrot = I64_Abs(rotation) / 100;
-        overs += overrot > 0 ? overrot : (angle <= 0 || angle >= 100 ? 1 : 0);
-        angle = angle % 100;
+        if(angle < 0){
+            // -869 -> 800
+            const int down = (I64_Abs(angle) / 100) * 100;
+            angle = down + 100 + (angle % 100);
+        }
 
-        if(angle < 0) angle += 100;
+        const int overrot = I64_Abs(angle) / 100;
+        overs += overrot > 0 ? overrot : 0;
+        zeros += (angle == 0 ? 1 : 0);
+        angle = angle % 100;
 
         //if(angle == 0) zeros++;
 
