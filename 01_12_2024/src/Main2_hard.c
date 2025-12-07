@@ -11,6 +11,7 @@ typedef struct Rotation {
     int value : 31;
 } Rotation;
 
+
 // Vector<CStr> Parts
 Vector Numbers_Build(Vector* Parts){
     Vector ret = Vector_New(sizeof(Rotation));
@@ -33,23 +34,6 @@ Vector Numbers_Build(Vector* Parts){
     return ret;
 }
 
-int clicking(int angle,int* clicks){
-    if(angle < 0){
-        // -869 -> 800
-        const int down = (I64_Abs(angle) / 100) * 100;
-        angle = down + 100 + (angle % 100);
-    }
-
-    while(angle > 100){
-        angle -= 100;
-        (*clicks)++;
-    }
-    if(angle == 0){
-        (*clicks)++;
-    }
-
-    return angle;
-}
 
 int main(){
     
@@ -59,19 +43,32 @@ int main(){
     Vector Parts = CStr_ChopDown(Data,'\n');
     Vector Numbers = Numbers_Build(&Parts);
 
-    int clicks = 0;
+    int overs = 0;
+    int zeros = 0;
     int angle = 50;
-    
     for(int i = 0;i<Numbers.size;i++){
         Rotation* r = (Rotation*)Vector_Get(&Numbers,i);
         const int rotation = r->value * (r->dir==DIRECTION_L ? -1 : 1);
         const int preangle = angle;
         angle += rotation;
-        angle = clicking(angle,&clicks);
-        printf("Angle: %d + %d = %d (%d)\n",preangle,rotation,angle,clicks);
+
+        if(angle < 0){
+            // -869 -> 800
+            const int down = (I64_Abs(angle) / 100) * 100;
+            angle = down + 100 + (angle % 100);
+        }
+
+        const int overrot = I64_Abs(angle) / 100;
+        overs += overrot > 0 ? overrot : 0;
+        zeros += (angle == 0 ? 1 : 0);
+        angle = angle % 100;
+
+        //if(angle == 0) zeros++;
+
+        printf("Angle: %d + %d = %d |    \t%d,%d\n",preangle,rotation,angle,zeros,overs);
     }
 
-    printf("Clicks: %d\n",clicks);
+    printf("Zeros: %d, Overs: %d -> %d\n",zeros,overs,zeros + overs);
 
     Vector_Free(&Numbers);
 
